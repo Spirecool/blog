@@ -1,16 +1,60 @@
 import '../css/app.scss';
 import {Dropdown} from 'bootstrap';
+// import { async } from 'regenerator-runtime';
 
 
 // DropDown
 
 document.addEventListener('DOMContentLoaded', () => {
-    enableDropdowns();
+    new App();
 });
 
-const enableDropdowns = () => {
-    const dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
-    dropdownElementList.map(function (dropdownToggleEl) {
+class App {
+    constructor() {
+        // le sconstructeur va activer les Dropdowns
+        this.enableDropdowns();
+        this.handleCommentForm();
+    }
+
+    enableDropdowns() {
+        const dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+        dropdownElementList.map(function (dropdownToggleEl) {
         return new Dropdown(dropdownToggleEl)
-    });
+        });
+    }
+
+    handleCommentForm() {
+        const commentForm = document.querySelector('form.comment-form');
+
+        if(null === commentForm) {
+            return;
+        } 
+
+        commentForm.addEventListener('submit', async(e)=> {
+            e.preventDefault();
+
+            const response = await fetch('/ajax/comments', {
+                method: 'POST',
+                body: new FormData(e.target)
+            });
+
+            if(!response.ok) {
+                return;
+            }
+
+            const json = await response.json();
+
+            if(json.code === 'COMMENT-ADDED_SUCCESSFULLY') {
+                const commentList = document.querySelector('.comment-list');
+                const commentCount = document.querySelector('.comment-count');
+                const commentContent = document.querySelector('.comment-content');
+                commentList.insertAdjacentElement('beforeend', json.message);
+                commentList.lastElementChild.scrollIntoView();
+                commentCount.innerText = json.numberOfComments;
+                commentContent.value ='';
+            }
+        });
+    }
 }
+
+
