@@ -4,16 +4,27 @@ namespace App\Controller\Admin;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
+use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
+use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
+use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use EasyCorp\Bundle\EasyAdminBundle\Orm\EntityRepository;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+
+/**
+ *  @method User getUser()
+ */
 
 class UserCrudController extends AbstractCrudController
 {
     //on injecte le passwordHasher dans le constructeur
     public function __construct(
+        private EntityRepository $entityRepo,
         private UserPasswordHasherInterface $passwordHasher
     ) {
     }
@@ -23,6 +34,19 @@ class UserCrudController extends AbstractCrudController
     public static function getEntityFqcn(): string
     {
         return User::class;
+    }
+
+
+    public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
+    {
+        $userId = $this -> getUser()->getId(); 
+
+        // on masque l'utilisateur admin dans la liste ds utilisateurs de la page Tous les comptes
+        $qb = $this->entityRepo->createQueryBuilder($searchDto, $entityDto, $fields, $filters);
+        $qb->andWhere('entity.id != :userId')->setParameter('userId', $userId);
+
+        return $qb;
+        
     }
 
    
